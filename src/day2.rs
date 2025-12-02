@@ -10,7 +10,8 @@ impl Range {
     fn new(data: &str) -> Range {
         let (start, end) = data
             .split("-")
-            .map(|x| x.parse().unwrap())
+            .map(str::parse)
+            .map(Result::unwrap)
             .collect_tuple()
             .unwrap();
         Range { start, end }
@@ -24,7 +25,7 @@ impl Range {
 
     fn count_all_invalid(&self) -> usize {
         (self.start..=self.end)
-            .filter(|x| Self::is_invalid_any_length(&x.to_string()))
+            .filter(|id| Self::is_invalid_any_length(&id.to_string()))
             .sum()
     }
 
@@ -36,13 +37,11 @@ impl Range {
         if id.len() % repeats != 0 {
             false
         } else {
-            let partitions = id
-                .chars()
+            id.chars()
                 .chunks(id.len() / repeats)
                 .into_iter()
                 .map(|chunk| chunk.collect::<String>())
-                .collect::<Vec<String>>();
-            partitions.iter().all_equal()
+                .all_equal()
         }
     }
 }
