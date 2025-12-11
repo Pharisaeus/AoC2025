@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 
 struct Graph {
@@ -49,57 +49,62 @@ impl Graph {
         }
     }
 
-    fn count_paths_dac_fft(&self, start: &str, end: &str) -> usize {
+    fn count_paths_including(&self, start: &str, end: &str, need_to_see: &HashSet<&str>) -> usize {
         let mut known_simple = HashMap::new();
         let mut known_complex = HashMap::new();
-        let result = self.rec_count_paths_dac_fft(
+        let result = self.rec_count_paths_including(
             &start,
             &end,
-            false,
-            false,
+            need_to_see,
+            &vec![],
             &mut known_simple,
             &mut known_complex,
         );
         result
     }
 
-    fn rec_count_paths_dac_fft(
+    fn rec_count_paths_including(
         &self,
         current: &str,
         end: &str,
-        seen_dac: bool,
-        seen_fft: bool,
+        need_to_see: &HashSet<&str>,
+        seen_so_far: &Vec<String>,
         known_simple: &mut HashMap<String, usize>,
-        known_complex: &mut HashMap<(String, bool, bool), usize>,
+        known_complex: &mut HashMap<(String, Vec<String>), usize>,
     ) -> usize {
-        let key = &(current.to_string(), seen_dac, seen_fft);
+        let how_many_seen = seen_so_far.len();
+        let key = &(current.to_string(), seen_so_far.clone());
         if known_complex.contains_key(key) {
             // we already know how many paths from current lead to a proper solution
             known_complex[key]
-        } else if (seen_dac && seen_fft) {
+        } else if how_many_seen == need_to_see.len() {
             // all needed nodes seen, just count all the path till the end
             self.rec_count_paths(current, end, known_simple)
         } else if current == end {
             // end reached but not all nodes seen, bad path
             0
         } else {
+            let mut current_seen = seen_so_far.clone();
+            if need_to_see.contains(current) {
+                current_seen.push(current.to_string());
+            }
             let result = self
                 .connections
                 .get(current)
                 .unwrap_or(&vec![])
                 .iter()
                 .map(|node| {
-                    self.rec_count_paths_dac_fft(
+                    self.rec_count_paths_including(
                         &node,
                         &end,
-                        seen_dac || current == "dac",
-                        seen_fft || current == "fft",
+                        need_to_see,
+                        &current_seen,
                         known_simple,
                         known_complex,
                     )
                 })
                 .sum();
-            known_complex.insert((current.to_string(), seen_dac, seen_fft), result);
+            known_complex.insert((current.to_string(), current_seen), result);
             result
         }
     }
@@ -109,7 +114,7 @@ fn part1(graph: &Graph) -> usize {
 }
 
 fn part2(graph: &Graph) -> usize {
-    graph.count_paths_dac_fft("svr", "out")
+    graph.count_paths_including("svr", "out", &HashSet::from(["dac", "fft"]))
 }
 
 pub(crate) fn solve() {
