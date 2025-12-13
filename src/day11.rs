@@ -117,9 +117,19 @@ fn part2(graph: &Graph) -> usize {
     graph.count_paths_including("svr", "out", &HashSet::from(["dac", "fft"]))
 }
 
+fn part2_smart(graph: &Graph) -> usize {
+    graph.count_paths("svr", "dac")
+        * graph.count_paths("dac", "fft")
+        * graph.count_paths("fft", "out")
+        + graph.count_paths("svr", "fft")
+            * graph.count_paths("fft", "dac")
+            * graph.count_paths("dac", "out")
+}
+
 pub(crate) fn solve() {
     let contents = fs::read_to_string("11.txt").unwrap();
     let graph = Graph::new(&contents);
     println!("{}", part1(&graph));
     println!("{}", part2(&graph));
+    println!("{}", part2_smart(&graph));
 }
