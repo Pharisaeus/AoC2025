@@ -34,7 +34,7 @@ impl Region {
     }
 
     fn area(&self) -> usize {
-        self.x * self.y
+        (self.x - self.x % 3) * (self.y - self.y % 3) // only part that fits whole blocks!
     }
 
     fn can_cover(&self, presents: &Vec<Present>) -> bool {
